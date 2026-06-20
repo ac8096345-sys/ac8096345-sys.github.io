@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Tarot</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Crimson+Text:ital,wght@0,400;1,400&display=swap');
+:root{--bg:#0d0a14;--gold:#c9a84c;--gold-dim:#7a5f28;--text:#e8dfc8;--muted:#6b5f7a;--accent:#1e1430;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;min-height:100vh;background:var(--bg);color:var(--text);font-family:'Crimson Text',Georgia,serif;}
+body{display:flex;flex-direction:column;align-items:center;padding-bottom:3rem;}
+header{width:100%;padding:1.2rem 1rem;text-align:center;border-bottom:1px solid var(--gold-dim);background:linear-gradient(180deg,#1a0e2e,var(--bg));}
+header h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,5vw,1.8rem);color:var(--gold);letter-spacing:.08em;}
+#deck-selector{padding:1.2rem 1rem .8rem;text-align:center;width:100%;}
+#deck-selector h2{font-family:'Cinzel Decorative',serif;font-size:clamp(.6rem,2.5vw,.8rem);color:var(--muted);letter-spacing:.2em;text-transform:uppercase;margin-bottom:.8rem;}
+#deck-buttons{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;}
+.deck-btn{background:transparent;border:1px solid var(--gold-dim);color:var(--gold);font-family:'Crimson Text',serif;font-size:clamp(1rem,4vw,1.05rem);padding:.65rem 1.2rem;cursor:pointer;border-radius:3px;touch-action:manipulation;min-height:48px;}
+.deck-btn.active{background:var(--gold);color:var(--bg);}
+#controls{display:flex;gap:.5rem;padding:.6rem 1rem;justify-content:center;flex-wrap:wrap;width:100%;}
+.ctrl-btn{background:transparent;border:1px solid var(--muted);color:var(--text);font-family:'Crimson Text',serif;font-size:clamp(1rem,4vw,1rem);padding:.65rem 1.1rem;cursor:pointer;border-radius:3px;touch-action:manipulation;min-height:48px;}
+.ctrl-btn:active{border-color:var(--gold);color:var(--gold);}
+#card-count{font-size:clamp(.8rem,3vw,.88rem);color:var(--muted);font-style:italic;width:100%;text-align:center;padding:.3rem 0;}
+#spread-area{width:100%;padding:.8rem 1rem 1.2rem;}
+#spread-area h3{font-family:'Cinzel Decorative',serif;font-size:clamp(.55rem,2vw,.65rem);color:var(--muted);letter-spacing:.2em;text-transform:uppercase;margin-bottom:.8rem;}
+#drawn-cards{display:flex;flex-wrap:wrap;gap:clamp(.7rem,3vw,1.1rem);}
+.drawn-card{display:flex;flex-direction:column;align-items:center;gap:.4rem;animation:reveal .35s ease-out;}
+@keyframes reveal{from{opacity:0;transform:translateY(8px) scale(.95);}to{opacity:1;transform:none;}}
+.drawn-card img,.drawn-card .card-loading{width:clamp(85px,25vw,130px);height:clamp(136px,40vw,208px);border-radius:6px;border:1px solid var(--gold-dim);}
+.drawn-card img{object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,.7);}
+.drawn-card .card-loading{background:var(--accent);display:flex;align-items:center;justify-content:center;}
+.drawn-card .card-loading span{color:var(--gold);font-size:.68rem;opacity:.6;}
+.drawn-card label{font-size:clamp(.68rem,2.2vw,.75rem);color:var(--muted);text-align:center;max-width:clamp(85px,25vw,130px);line-height:1.3;}
+hr#divider{width:calc(100% - 2rem);border:none;border-top:1px solid #1e1a28;margin:.5rem 1rem;}
+#deck-area{width:100%;padding:.8rem 0 1.5rem;}
+#deck-area h3{font-family:'Cinzel Decorative',serif;font-size:clamp(.55rem,2vw,.65rem);color:var(--muted);letter-spacing:.2em;text-transform:uppercase;margin-bottom:.8rem;padding:0 1rem;}
+#carousel-wrap{position:relative;width:100%;display:flex;align-items:center;}
+.carr-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;background:rgba(13,10,20,.92);border:1px solid var(--gold-dim);color:var(--gold);width:32px;height:56px;border-radius:3px;cursor:pointer;font-size:1.3rem;display:flex;align-items:center;justify-content:center;touch-action:manipulation;user-select:none;}
+.carr-arrow:active{background:var(--gold);color:var(--bg);}
+#arr-left{left:2px;}#arr-right{right:2px;}
+#deck-track-outer{overflow:hidden;flex:1;margin:0 38px;}
+#deck-track{display:flex;gap:clamp(8px,2vw,14px);padding:clamp(10px,2.5vw,16px) 2px;will-change:transform;}
+.deck-card{flex-shrink:0;width:clamp(82px,24vw,115px);height:clamp(131px,38vw,184px);border-radius:6px;overflow:hidden;cursor:pointer;touch-action:manipulation;box-shadow:0 3px 12px rgba(0,0,0,.55);transition:transform .15s,box-shadow .15s;}
+.deck-card:active{transform:translateY(-8px) scale(1.05);box-shadow:0 8px 24px rgba(201,168,76,.4);}
+.deck-card svg{width:100%;height:100%;display:block;pointer-events:none;}
+#loading{text-align:center;padding:3rem 1rem;color:var(--muted);font-style:italic;}
+#empty-state{text-align:center;padding:2.5rem 1rem;color:var(--muted);}
+#empty-state p{font-size:1rem;margin-bottom:.4rem;}
+#empty-state small{font-size:.82rem;opacity:.7;}
+#error-cors{display:none;background:#1a0a0a;border:1px solid #c0392b;color:#e8dfc8;padding:1rem 1.2rem;margin:1rem;border-radius:4px;font-size:.9rem;line-height:1.6;}
+</style>
+</head>
+<body>
+<header><h1>✦ Tarot ✦</h1></header>
+
+<section id="deck-selector">
+  <h2>Elige un mazo</h2>
+  <div id="deck-buttons"><span style="color:var(--muted);font-style:italic;">Cargando mazos...</span></div>
+</section>
+
+<div id="controls" style="display:none;">
+  <button class="ctrl-btn" onclick="shuffleDeck()">↺ Barajar</button>
+  <button class="ctrl-btn" onclick="drawTop()">Sacar carta</button>
+  <button class="ctrl-btn" onclick="resetReading()">✕ Reiniciar</button>
+  <span id="card-count"></span>
+</div>
+
+<section id="spread-area" style="display:none;">
+  <h3>Tirada</h3>
+  <div id="drawn-cards"></div>
+</section>
+
+<hr id="divider" style="display:none;">
+
+<section id="deck-area" style="display:none;">
+  <h3>Toca una carta para sacarla</h3>
+  <div id="carousel-wrap">
+    <button class="carr-arrow" id="arr-left" onclick="scrollCarr(-1)">‹</button>
+    <div id="deck-track-outer"><div id="deck-track"></div></div>
+    <button class="carr-arrow" id="arr-right" onclick="scrollCarr(1)">›</button>
+  </div>
+</section>
+
+<div id="loading" style="display:none;">Cargando...</div>
+<div id="empty-state">
+  <p>Selecciona un mazo para comenzar</p>
+  <small>Las cartas se cargan desde tu Google Drive</small>
+</div>
+<div id="error-cors"></div>
+
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyb4KWZgOYPQ1GgS_p3mIRhpDcV1gEIliMbR4QBIykY9Ikx4hAeOU6JhtWD8lPxW9ItMg/exec";
+
+function gas(action, params){
+  const url = new URL(GAS_URL);
+  url.searchParams.set('action', action);
+  if(params) Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
+  return fetch(url, {redirect:'follow'})
+    .then(r=>r.json());
+}
+
+function cardBackSVG(){
+  return `<svg viewBox="0 0 52 83" xmlns="http://www.w3.org/2000/svg">
+    <rect width="52" height="83" rx="4" fill="#120d22"/>
+    <rect x="1.5" y="1.5" width="49" height="80" rx="3.5" fill="none" stroke="#c9a84c" stroke-width="0.8"/>
+    <rect x="4" y="4" width="44" height="75" rx="2.5" fill="none" stroke="#c9a84c" stroke-width="0.3" stroke-dasharray="2,2" opacity="0.5"/>
+    <g transform="translate(26,41)">
+      <circle r="24" fill="none" stroke="#c9a84c" stroke-width="0.3" opacity="0.2"/>
+      <circle r="17" fill="none" stroke="#c9a84c" stroke-width="0.3" opacity="0.3"/>
+      <circle r="12" fill="none" stroke="#c9a84c" stroke-width="0.4" opacity="0.4"/>
+      <circle r="6.5" fill="none" stroke="#c9a84c" stroke-width="0.5" opacity="0.6"/>
+      <circle r="2.2" fill="#c9a84c" opacity="0.9"/><circle r="0.7" fill="#120d22"/>
+      <g stroke="#c9a84c" stroke-width="0.3" fill="none" opacity="0.4">
+        <line x1="0" y1="-24" x2="0" y2="24"/><line x1="-24" y1="0" x2="24" y2="0"/>
+        <line x1="-17" y1="-17" x2="17" y2="17"/><line x1="17" y1="-17" x2="-17" y2="17"/>
+      </g>
+      <g fill="#c9a84c" opacity="0.17">
+        <ellipse rx="3.5" ry="11" transform="rotate(0) translate(0,-6.5)"/>
+        <ellipse rx="3.5" ry="11" transform="rotate(45) translate(0,-6.5)"/>
+        <ellipse rx="3.5" ry="11" transform="rotate(90) translate(0,-6.5)"/>
+        <ellipse rx="3.5" ry="11" transform="rotate(135) translate(0,-6.5)"/>
+        <ellipse rx="3.5" ry="11" transform="rotate(180) translate(0,-6.5)"/>
+        <ellipse rx="3.5" ry="11" transform="rotate(225) translate(0,-6.5)"/>
+        <ellipse rx="3.5" ry="11" transform="rotate(270) translate(0,-6.5)"/>
+        <ellipse rx="3.5" ry="11" transform="rotate(315) translate(0,-6.5)"/>
+      </g>
+      <polygon points="0,-8 6.9,4 -6.9,4" fill="none" stroke="#c9a84c" stroke-width="0.5" opacity="0.5"/>
+      <polygon points="0,8 6.9,-4 -6.9,-4" fill="none" stroke="#c9a84c" stroke-width="0.5" opacity="0.5"/>
+      <g fill="#c9a84c" opacity="0.55">
+        <circle cx="0" cy="-17" r="0.7"/><circle cx="12" cy="-12" r="0.7"/>
+        <circle cx="17" cy="0" r="0.7"/><circle cx="12" cy="12" r="0.7"/>
+        <circle cx="0" cy="17" r="0.7"/><circle cx="-12" cy="12" r="0.7"/>
+        <circle cx="-17" cy="0" r="0.7"/><circle cx="-12" cy="-12" r="0.7"/>
+      </g>
+    </g>
+    <g stroke="#c9a84c" stroke-width="0.5" fill="none" opacity="0.5">
+      <path d="M6,7 L6,11 M6,7 L10,7"/><path d="M46,7 L46,11 M46,7 L42,7"/>
+      <path d="M6,76 L6,72 M6,76 L10,76"/><path d="M46,76 L46,72 M46,76 L42,76"/>
+    </g>
+  </svg>`;
+}
+
+let allCards=[],remaining=[],drawn=[];
+const imgCache={};
+let carrOffset=0,touchStartX=0,touchStartOff=0,isSwiping=false;
+let mouseDown=false,mouseStartX=0,mouseStartOff=0,mouseMoved=false;
+
+function cardW(){const f=document.querySelector('.deck-card');return f?f.offsetWidth:82;}
+function gapPx(){return Math.max(8,window.innerWidth*0.02);}
+function outerW(){return document.getElementById('deck-track-outer').clientWidth||260;}
+function maxOff(){if(!remaining.length)return 0;return Math.max(0,remaining.length*(cardW()+gapPx())-gapPx()-outerW());}
+function applyOff(anim){const t=document.getElementById('deck-track');t.style.transition=anim?'transform .22s ease':'none';t.style.transform=`translateX(-${carrOffset}px)`;}
+function scrollCarr(dir){carrOffset=Math.min(maxOff(),Math.max(0,carrOffset+dir*(cardW()+gapPx())*3));applyOff(true);}
+
+const outer=document.getElementById('deck-track-outer');
+outer.addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX;touchStartOff=carrOffset;isSwiping=false;},{passive:true});
+outer.addEventListener('touchmove',e=>{const dx=touchStartX-e.touches[0].clientX;if(!isSwiping&&Math.abs(dx)<5)return;isSwiping=true;carrOffset=Math.min(maxOff(),Math.max(0,touchStartOff+dx));applyOff(false);},{passive:true});
+outer.addEventListener('touchend',()=>{applyOff(true);setTimeout(()=>{isSwiping=false;},50);},{passive:true});
+outer.addEventListener('mousedown',e=>{mouseDown=true;mouseMoved=false;mouseStartX=e.clientX;mouseStartOff=carrOffset;outer.style.cursor='grabbing';});
+window.addEventListener('mousemove',e=>{if(!mouseDown)return;const dx=mouseStartX-e.clientX;if(Math.abs(dx)>4)mouseMoved=true;carrOffset=Math.min(maxOff(),Math.max(0,mouseStartOff+dx));applyOff(false);});
+window.addEventListener('mouseup',()=>{if(!mouseDown)return;mouseDown=false;outer.style.cursor='grab';applyOff(true);setTimeout(()=>{mouseMoved=false;},50);});
+
+// INICIO — pide mazos al Apps Script
+gas('getDecks').then(renderDecks).catch(showCorsError);
+
+function renderDecks(decks){
+  const c=document.getElementById('deck-buttons');
+  if(!decks||!decks.length){c.innerHTML='<span style="color:var(--muted);">No se encontraron mazos.</span>';return;}
+  c.innerHTML='';
+  decks.forEach(d=>{
+    const btn=document.createElement('button');
+    btn.className='deck-btn';btn.textContent=d.name;
+    btn.onclick=()=>loadDeck(d.id,btn);
+    c.appendChild(btn);
+  });
+}
+
+function loadDeck(id,btn){
+  document.querySelectorAll('.deck-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  showLoading(true);
+  gas('getCards',{folderId:id}).then(initDeck).catch(showCorsError);
+}
+
+function initDeck(cards){
+  allCards=cards;remaining=[...cards];drawn=[];
+  carrOffset=0;showLoading(false);renderAll();setVisible(true);
+}
+
+function shuffleDeck(){
+  remaining=[...allCards];drawn=[];
+  for(let i=remaining.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[remaining[i],remaining[j]]=[remaining[j],remaining[i]];}
+  carrOffset=0;renderAll();
+}
+function drawTop(){if(remaining.length)drawAt(0);}
+function drawAt(i){
+  if(isSwiping||mouseMoved)return;
+  const card=remaining.splice(i,1)[0];drawn.push(card);
+  carrOffset=Math.min(maxOff(),carrOffset);
+  renderDeck();appendDrawnCard(card);updateCount();
+}
+function resetReading(){drawn=[];remaining=[...allCards];carrOffset=0;renderAll();}
+function renderAll(){renderDeck();renderDrawnAll();updateCount();}
+
+function renderDeck(){
+  const track=document.getElementById('deck-track');track.innerHTML='';
+  remaining.forEach((card,i)=>{
+    const div=document.createElement('div');div.className='deck-card';div.title=card.name;
+    div.innerHTML=cardBackSVG();
+    div.addEventListener('click',()=>{if(!isSwiping&&!mouseMoved)drawAt(i);});
+    track.appendChild(div);
+  });
+  applyOff(false);
+}
+
+function renderDrawnAll(){document.getElementById('drawn-cards').innerHTML='';drawn.forEach(c=>appendDrawnCard(c,false));}
+
+function appendDrawnCard(card,anim=true){
+  const c=document.getElementById('drawn-cards');
+  const wrap=document.createElement('div');wrap.className='drawn-card';
+  if(!anim)wrap.style.animation='none';
+  const ph=document.createElement('div');ph.className='card-loading';ph.innerHTML='<span>cargando...</span>';
+  const lbl=document.createElement('label');lbl.textContent=card.name;
+  wrap.appendChild(ph);wrap.appendChild(lbl);c.appendChild(wrap);
+  if(imgCache[card.id]){swapImg(ph,imgCache[card.id]);return;}
+  gas('getImage',{fileId:card.id})
+    .then(res=>{const url=`data:${res.mime};base64,${res.b64}`;imgCache[card.id]=url;swapImg(ph,url);})
+    .catch(()=>{ph.innerHTML='<span>error</span>';});
+}
+
+function swapImg(ph,src){const img=document.createElement('img');img.src=src;img.alt='carta';ph.replaceWith(img);}
+
+function setVisible(on){
+  ['controls','spread-area','deck-area','divider'].forEach(id=>{document.getElementById(id).style.display=on?'':'none';});
+  if(on)updateCount();
+}
+function updateCount(){document.getElementById('card-count').textContent=`${remaining.length} restantes · ${drawn.length} en tirada`;}
+function showLoading(on){document.getElementById('loading').style.display=on?'block':'none';if(on)setVisible(false);}
+function showCorsError(err){
+  console.error(err);
+  document.getElementById('deck-buttons').innerHTML='<span style="color:#c0392b;">Error al conectar</span>';
+  document.getElementById('error-cors').style.display='block';
+  document.getElementById('error-cors').innerHTML='Error de conexión. Verifica que el Apps Script esté publicado como "Cualquier persona".';
+}
+</script>
+</body>
+</html>
