@@ -188,11 +188,15 @@ function initDeck(cards){
 }
 
 function shuffleDeck(){
-  remaining=[...allCards];drawn=[];
-  for(let i=remaining.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[remaining[i],remaining[j]]=[remaining[j],remaining[i]];}
-  carrOffset=0;renderAll();
+  for(let i=remaining.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [remaining[i],remaining[j]]=[remaining[j],remaining[i]];
+  }
+  carrOffset=0;
+  renderDeck();
+  updateCount();
 }
-function drawTop(){if(remaining.length)drawAt(0);}
+  function drawTop(){if(remaining.length)drawAt(0);}
 function drawAt(i){
   if(isSwiping||mouseMoved)return;
   const card=remaining.splice(i,1)[0];drawn.push(card);
